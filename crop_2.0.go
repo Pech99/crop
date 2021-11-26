@@ -36,22 +36,25 @@ func main() {
 		}
 
 		if imgold == nil || img.Bounds().Size() != imgold.Bounds().Size() {
+			fmt.Print("--> ", n)
+
 			img, err = cropImage(img, image.Rect(X1, Y1, X2, Y2))
 			if err != nil {
 				fmt.Println("cropImage:", err)
 				return
 			}
+			fmt.Print(" Crp")
 
 			imgB, err := imgToByte(img)
 			if err != nil {
 				fmt.Println("imgToByte:", err)
 				return
 			}
-
 			clipboard.Write(clipboard.FmtImage, imgB)
+			fmt.Print(" Wrt\n")
 
+			go writeImage(img, fmt.Sprint(n, ".png"))
 			n++
-			fmt.Println("--> ", n)
 			imgold = img
 		}
 
@@ -139,7 +142,8 @@ func imgToByte(img image.Image) ([]byte, error) {
 }
 
 func writeImage(img image.Image, name string) error {
-	fd, err := os.Create(name)
+	os.MkdirAll("out\\", 0333)
+	fd, err := os.Create("out\\" + name)
 	if err != nil {
 		return err
 	}
