@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 
-	"image/jpeg"
 	"image/png"
 
 	"github.com/kbinani/screenshot"
@@ -20,107 +19,51 @@ import (
 
 func main() {
 
-	disp, X1, Y1, X2, Y2, err := parsConf(os.Args)
+	p1x, p1y, p2x, p2y, err := parsConf(os.Args[1:])
 	if err != nil {
 		fmt.Println("parsConf:", err)
 		return
 	}
 
-	bounds := screenshot.GetDisplayBounds(disp)
-
-	img, err := screenshot.CaptureRect(bounds)
+	img, err := screenshot.CaptureRect(image.Rect(p1x, p1y, p2x, p2y))
 	if err != nil {
 		panic(err)
 	}
 
-	img2, err := cropImage(img, image.Rect(X1, Y1, X2, Y2))
-	if err != nil {
-		fmt.Println("cropImage:", err)
-		return
-	}
-	fmt.Print(" Crp")
-
-	imgB, err := imgToByte(img2)
+	imgB, err := imgToByte(img)
 	if err != nil {
 		fmt.Println("imgToByte:", err)
 		return
 	}
 	clipboard.Write(clipboard.FmtImage, imgB)
-	fmt.Print(" Wrt\n")
 
 }
 
-func parsConf(args []string) (int, int, int, int, int, error) {
+func parsConf(args []string) (int, int, int, int, error) {
 
-	if len(args) == 1 || len(args) == 2 && (args[1] == "help" || args[1] == "?") {
-		s := "\ninvocare il programma con i seguenti argomenti:\ndisp, X1, Y1, X2, Y2\ndisp: numero del display di cui efetuare lo screen\nX1, Y1: coordinate del primo angolo\nX2, Y2: coordinate dell'angolo opposto"
-		return 0, 0, 0, 0, 0, errors.New(s)
+	const nArg int = 4
+
+	if len(args) == 0 || len(args) == 1 && (args[0] == "help" || args[0] == "?") {
+		s := "\ninvocare il programma con i seguenti argomenti:\nX1, Y1, X2, Y2\nX1, Y1: coordinate del primo angolo\nX2, Y2: coordinate dell'angolo opposto"
+		return 0, 0, 0, 0, errors.New(s)
 	}
 
-	if len(args) != 6 {
-		return 0, 0, 0, 0, 0, errors.New("Argomenti Insufficenti")
+	if len(args) != nArg {
+		return 0, 0, 0, 0, errors.New("argomenti ansufficenti")
 	}
 
-	disp, err := strconv.Atoi(args[1])
-	if err != nil {
-		fmt.Println(err)
-		return 0, 0, 0, 0, 0, err
+	var argsi [nArg]int
+	var err error
+
+	for i := 0; i < nArg; i++ {
+		argsi[i], err = strconv.Atoi(args[1])
+		if err != nil {
+			fmt.Println(err)
+			return 0, 0, 0, 0, err
+		}
 	}
 
-	X1, err := strconv.Atoi(args[2])
-	if err != nil {
-		fmt.Println(err)
-		return 0, 0, 0, 0, 0, err
-	}
-
-	Y1, err := strconv.Atoi(args[3])
-	if err != nil {
-		fmt.Println(err)
-		return 0, 0, 0, 0, 0, err
-	}
-
-	X2, err := strconv.Atoi(args[4])
-	if err != nil {
-		fmt.Println(err)
-		return 0, 0, 0, 0, 0, err
-	}
-
-	Y2, err := strconv.Atoi(args[5])
-	if err != nil {
-		fmt.Println(err)
-		return 0, 0, 0, 0, 0, err
-	}
-
-	return disp, X1, Y1, X2, Y2, nil
-}
-
-func readImage(name string) (image.Image, error) {
-	fd, err := os.Open(name)
-	if err != nil {
-		return nil, err
-	}
-	defer fd.Close()
-
-	img, err := png.Decode(fd)
-	//img, _, err := image.Decode(fd)
-	if err != nil {
-		return nil, err
-	}
-
-	return img, nil
-}
-
-func cropImage(img image.Image, crop image.Rectangle) (image.Image, error) {
-	type subImager interface {
-		SubImage(r image.Rectangle) image.Image
-	}
-
-	simg, ok := img.(subImager)
-	if !ok {
-		return nil, fmt.Errorf("image does not support cropping")
-	}
-
-	return simg.SubImage(crop), nil
+	return argsi[0], argsi[1], argsi[2], argsi[3], nil
 }
 
 func imgToByte(img image.Image) ([]byte, error) {
@@ -138,16 +81,5 @@ func imgToByte(img image.Image) ([]byte, error) {
 		return nil, err
 	}
 
-	return reed, nil
-}
-
-func writeImage(img image.Image, name string) error {
-	os.MkdirAll("out\\", 0333)
-	fd, err := os.Create("out\\" + name)
-	if err != nil {
-		return err
-	}
-	defer fd.Close()
-
-	return jpeg.Encode(fd, img, nil)
+	return reed[:len(reed)-1], nil
 }
