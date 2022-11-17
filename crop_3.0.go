@@ -31,8 +31,15 @@ func main() {
 		panic(err)
 	}
 
-	go addClipboard(img)
-	go writeImage(img, getName())
+	imgB, err := imgToByte(img)
+	if err != nil {
+		fmt.Println("imgToByte:", err)
+		return
+	}
+
+	clipboard.Write(clipboard.FmtImage, imgB)
+
+	writeImage(img, getName())
 
 }
 
@@ -104,8 +111,10 @@ func writeImage(img *image.RGBA, name string) error {
 	return png.Encode(fd, img)
 }
 
-func getName() string {
+func getName() string { //2022-Nov-17_161548_634275200.png
 	n := time.Now()
 	n.Date()
-	return fmt.Sprint(n.Year(), "-", n.Month(), "-", n.Day(), "_", n.Hour(), "-", n.Minute(), "-", n.Second(), "_", n.Nanosecond(), ".png")
+	return fmt.Sprintf("%04d-%s-%02d_%02d%02d%02d_%09d.png", n.Year(), n.Month().String()[:3], n.Day(), n.Hour(), n.Minute(), n.Second(), n.Nanosecond())
+	//return fmt.Sprintf("%04d-%s-%02d_%02d%02d%02d_%d.png", 2022, "Sep", 1, 2, 3, 4, 12345678)
+	//return fmt.Sprint(n.Year(), "-", n.Month().String()[:3], "-", n.Day(), "_", n.Hour(), "-", n.Minute(), "-", n.Second(), "_", n.Nanosecond(), ".png")
 }
