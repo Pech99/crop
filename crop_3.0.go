@@ -7,6 +7,7 @@ import (
 	"image"
 	"os"
 	"strconv"
+	"time"
 
 	"image/png"
 
@@ -30,12 +31,8 @@ func main() {
 		panic(err)
 	}
 
-	imgB, err := imgToByte(img)
-	if err != nil {
-		fmt.Println("imgToByte:", err)
-		return
-	}
-	clipboard.Write(clipboard.FmtImage, imgB)
+	go addClipboard(img)
+	go writeImage(img, getName())
 
 }
 
@@ -56,7 +53,7 @@ func parsConf(args []string) (int, int, int, int, error) {
 	var err error
 
 	for i := 0; i < nArg; i++ {
-		argsi[i], err = strconv.Atoi(args[1])
+		argsi[i], err = strconv.Atoi(args[i])
 		if err != nil {
 			fmt.Println(err)
 			return 0, 0, 0, 0, err
@@ -66,7 +63,7 @@ func parsConf(args []string) (int, int, int, int, error) {
 	return argsi[0], argsi[1], argsi[2], argsi[3], nil
 }
 
-func imgToByte(img image.Image) ([]byte, error) {
+func imgToByte(img *image.RGBA) ([]byte, error) {
 
 	buff := new(bytes.Buffer)
 	err := png.Encode(buff, img)
@@ -81,5 +78,34 @@ func imgToByte(img image.Image) ([]byte, error) {
 		return nil, err
 	}
 
-	return reed[:len(reed)-1], nil
+	//return reed[:len(reed)-0], nil
+	return reed, nil
+}
+
+func addClipboard(img *image.RGBA) {
+	imgB, err := imgToByte(img)
+	if err != nil {
+		fmt.Println("imgToByte:", err)
+		return
+	}
+
+	clipboard.Write(clipboard.FmtImage, imgB)
+}
+
+func writeImage(img *image.RGBA, name string) error {
+	//"C:\\Users\\vitto\\Desktop\\Debug\\penna\\out\\"
+	os.MkdirAll("out\\", 0333)
+	fd, err := os.Create("out\\" + name)
+	if err != nil {
+		return err
+	}
+	defer fd.Close()
+
+	return png.Encode(fd, img)
+}
+
+func getName() string {
+	n := time.Now()
+	n.Date()
+	return fmt.Sprint(n.Year(), "-", n.Month(), "-", n.Day(), "_", n.Hour(), "-", n.Minute(), "-", n.Second(), "_", n.Nanosecond(), ".png")
 }
