@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"image"
@@ -11,8 +10,8 @@ import (
 
 	"image/png"
 
+	"github.com/Pech99/crop/clipboard"
 	"github.com/kbinani/screenshot"
-	"golang.design/x/clipboard"
 )
 
 //complile: go build -ldflags "-H windowsgui"
@@ -31,14 +30,7 @@ func main() {
 		panic(err)
 	}
 
-	imgB, err := imgToByte(img)
-	if err != nil {
-		fmt.Println("imgToByte:", err)
-		return
-	}
-
-	clipboard.Write(clipboard.FmtImage, imgB)
-
+	clipboard.WriteImmage(img)
 	writeImage(img, getName())
 
 }
@@ -70,35 +62,6 @@ func parsConf(args []string) (int, int, int, int, error) {
 	return argsi[0], argsi[1], argsi[2], argsi[3], nil
 }
 
-func imgToByte(img *image.RGBA) ([]byte, error) {
-
-	buff := new(bytes.Buffer)
-	err := png.Encode(buff, img)
-	if err != nil {
-		return nil, err
-	}
-
-	reader := bytes.NewReader(buff.Bytes())
-	var reed []byte = make([]byte, reader.Len())
-	_, err = reader.Read(reed)
-	if err != nil {
-		return nil, err
-	}
-
-	//return reed[:len(reed)-0], nil
-	return reed, nil
-}
-
-func addClipboard(img *image.RGBA) {
-	imgB, err := imgToByte(img)
-	if err != nil {
-		fmt.Println("imgToByte:", err)
-		return
-	}
-
-	clipboard.Write(clipboard.FmtImage, imgB)
-}
-
 func writeImage(img *image.RGBA, name string) error {
 	//"C:\\Users\\vitto\\Desktop\\Debug\\penna\\out\\"
 	os.MkdirAll("out\\", 0333)
@@ -115,6 +78,4 @@ func getName() string { //2022-Nov-17_161548_634275200.png
 	n := time.Now()
 	n.Date()
 	return fmt.Sprintf("%04d-%s-%02d_%02d%02d%02d_%09d.png", n.Year(), n.Month().String()[:3], n.Day(), n.Hour(), n.Minute(), n.Second(), n.Nanosecond())
-	//return fmt.Sprintf("%04d-%s-%02d_%02d%02d%02d_%d.png", 2022, "Sep", 1, 2, 3, 4, 12345678)
-	//return fmt.Sprint(n.Year(), "-", n.Month().String()[:3], "-", n.Day(), "_", n.Hour(), "-", n.Minute(), "-", n.Second(), "_", n.Nanosecond(), ".png")
 }
